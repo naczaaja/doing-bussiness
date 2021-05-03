@@ -14,7 +14,7 @@ admin.initializeApp();
 const LINE_MESSAGING_API = 'https://api.line.me/v2/bot/message';
 const LINE_HEADER = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer zzz+q0gGok7jqT5yCo2EgHQceOeTyLyVeo/oje3Zx1wRVtGl+2hRsYSs+JI/Gw30HFcy5T1DEO53QayXJ1QwQPMjjAkP7eGclHHBgecoII+h0BLfqH1Uy/CUS4r71wMnja9zOAq0kpX2Ctexbz7ANwdB04t89/1O/w1cDnyilFU=`
+    'Authorization': `Bearer XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`
 };
 const unirest = require('unirest');
 const { firestore } = require("./node_modules/firebase-admin/lib/index");
@@ -33,7 +33,7 @@ exports.webhookTrello = functions.https.onRequest(async (req, res) => {
         await admin.firestore().collection('card').doc(action.data.card.id).set(card);
         await admin.firestore().collection('change').doc(action.id).set(data);
 
-        const taskName = '���ͧҹ:' + card.name + ' ��١���������� list �ͧἹ��س����';
+        const taskName = 'ชื่องาน:' + card.name + ' ได้ถูกย้ายเข้ามาใน list ของแผนกคุณแล้ว';
         return push(res, taskName);
     }
     res.status(200).send('ok_naka');
