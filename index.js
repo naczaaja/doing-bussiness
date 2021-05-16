@@ -17,16 +17,6 @@ const LINE_HEADER =
 };
 var db = admin.firestore();
 const admimUser = 'U7e121ccdb2e6bde87f0ce6b734cbd7b3';
-const csUser1 = 'U7e121ccdb2e6bde87f0ce6b734cbd7b3';
-/*const csUser2 = '';
-const actUser1 = '';
-const actUser2 = '';
-const eqtUser1 = '';
-const eqtUser2 = '';
-const cstUser1 = '';
-const cstUser2 = '';
-const metUser1 = '';
-const metUser2 = '';*/
 const csList = '6028938e60eeaa20085e4f45'; //ผบค. list
 const actList = '6028939797c65d8331a95235'; //ผบป. list
 const eqtList = '603c9a325ea84524d0d2e832'; //ผคพ. list
@@ -84,36 +74,98 @@ exports.infoLineWebhook = functions.https.onRequest(async (req, res) => {
 
 
 exports.infoTrelloWebhook = functions.https.onRequest(async (req, res) => {
-    const action = req.body.action;
-
-    if(action && action.display.translationKey !== 'unknown' && 
-    action.display.translationKey === 'action_move_card_from_list_to_list')
+  const action = req.body.action;
+  const translationKey = action.display.translationKey;
+  const dataRef = db.collection('Member');
+  const CSsnapshot =  await dataRef.where('dep','==','ผบค.').get();
+  const ACTsnapshot =  await dataRef.where('dep','==','ผบป.').get();
+  const EQTsnapshot =  await dataRef.where('dep','==','ผคพ.').get();
+  const CSTsnapshot =  await dataRef.where('dep','==','ผกส.').get();
+  const METsnapshot =  await dataRef.where('dep','==','ผมต.').get();
+  
+  //วน loop ดึงข้อมูล Member collection มาจาก firestore
+  CSsnapshot.forEach(doc => {
+    CSTrelloFunction(doc);
+  });
+  ACTsnapshot.forEach(doc => {
+    ACTTrelloFunction(doc);
+  });
+  EQTsnapshot.forEach(doc => {
+    EQTTrelloFunction(doc);
+  });
+  CSTsnapshot.forEach(doc => {
+    CSTTrelloFunction(doc);
+  });
+  METsnapshot.forEach(doc => {
+    METTrelloFunction(doc);
+  });
+  
+  function CSTrelloFunction(doc) {
+    if(action && translationKey !== 'unknown' && translationKey === 'action_move_card_from_list_to_list')
     {
-        const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
-        if (action.data.listAfter.id === csList){
-          
-            push(csUser1,msgReply);
-            //push(csUser2,msg);
-            return res.status(200).end();
-        } else if (action.data.listAfter.id === actList){
-            //push(actUser1,msg);
-            //push(actUser2,msg);
-            return res.status(200).end();
-        } else if (action.data.listAfter.id === eqtList){
-            //push(eqtUser1,msg);
-            //push(eqtUser2,msg);
-            return res.status(200).end();
-        } else if (action.data.listAfter.id === cstList){
-            //push(cstUser1,msg);
-            //push(cstUser2,msg);
-            return res.status(200).end();
-        } else if (action.data.listAfter.id === metList){
-            //push(metUser1,msg);
-            //push(metUser2,msg);
-            return res.status(200).end();
-        }
+      const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
+      const csUser = doc.data().lineId;
+      if (action.data.listAfter.id === csList)
+      {
+        push(csUser,msgReply);
+        //push(csUser2,msg);
+        return res.status(200).end();
+      }  
     }
-    return res.status(400).end();
+  };
+  
+  function ACTTrelloFunction(doc) {
+    if(action && translationKey !== 'unknown' && translationKey === 'action_move_card_from_list_to_list')
+    {
+      const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
+      const actUser = doc.data().lineId;
+      if (action.data.listAfter.id === actList)
+      {
+        push(actUser,msgReply);
+        //push(actUser2,msg);
+        return res.status(200).end();
+      }
+    }
+  };
+  
+  function EQTTrelloFunction(doc) {
+    if(action && translationKey !== 'unknown' && translationKey === 'action_move_card_from_list_to_list'){
+      const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
+      const eqtUser = doc.data().lineId;
+      if (action.data.listAfter.id === eqtList)
+      {
+        push(eqtUser,msgReply);
+        //push(eqtUser2,msg);
+        return res.status(200).end();
+      }
+    }
+  };
+  
+  function CSTTrelloFunction(doc) {
+    if(action && translationKey !== 'unknown' && translationKey === 'action_move_card_from_list_to_list'){
+      const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
+      const cstUser = doc.data().lineId;
+      if (action.data.listAfter.id === cstList)
+      {
+        push(cstUser,msgReply);
+        //push(cstUser2,msg);
+        return res.status(200).end();
+      }
+    }  
+  };
+  
+  function METTrelloFunction(doc) {
+    if(action && translationKey !== 'unknown' && translationKey === 'action_move_card_from_list_to_list'){
+      const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
+      const metUser = doc.data().lineId;
+      if (action.data.listAfter.id === metList)
+      {
+        push(metUser,msgReply);
+        //push(metUser2,msg);
+        return res.status(200).end();
+      }
+    }
+  }
 });
 
 const push = (res, msg) => {
