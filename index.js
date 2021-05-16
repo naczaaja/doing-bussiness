@@ -1,53 +1,155 @@
-const functions = require("firebase-functions"); // The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
+//import
+const functions = require("firebase-functions");
 const request = require('request-promise');
-const admin = require('firebase-admin'); // The Firebase Admin SDK to access Firestore.
-admin.initializeApp();
+const admin = require('firebase-admin');
+const { user } = require("firebase-functions/lib/providers/auth");
+admin.initializeApp(functions.config().firebase);
+
+//-----------------------------------------------------------------------------------
+
+// index variables
+
 const LINE_MESSAGING_API = 'https://api.line.me/v2/bot/message';
-const LINE_HEADER = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer zzz+q0gGok7jqT5yCo2EgHQceOeTyLyVeo/oje3Zx1wRVtGl+2hRsYSs+JI/Gw30HFcy5T1DEO53QayXJ1QwQPMjjAkP7eGclHHBgecoII+h0BLfqH1Uy/CUS4r71wMnja9zOAq0kpX2Ctexbz7ANwdB04t89/1O/w1cDnyilFU=`
+const LINE_HEADER = 
+{
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer zzz+q0gGok7jqT5yCo2EgHQceOeTyLyVeo/oje3Zx1wRVtGl+2hRsYSs+JI/Gw30HFcy5T1DEO53QayXJ1QwQPMjjAkP7eGclHHBgecoII+h0BLfqH1Uy/CUS4r71wMnja9zOAq0kpX2Ctexbz7ANwdB04t89/1O/w1cDnyilFU=`
 };
-const unirest = require('unirest');
-const { firestore } = require("./node_modules/firebase-admin/lib/index");
+var db = admin.firestore();
+const admimUser = 'U7e121ccdb2e6bde87f0ce6b734cbd7b3';
+const csUser1 = 'U7e121ccdb2e6bde87f0ce6b734cbd7b3';
+/*const csUser2 = '';
+const actUser1 = '';
+const actUser2 = '';
+const eqtUser1 = '';
+const eqtUser2 = '';
+const cstUser1 = '';
+const cstUser2 = '';
+const metUser1 = '';
+const metUser2 = '';*/
+const csList = '6028938e60eeaa20085e4f45'; //ผบค. list
+const actList = '6028939797c65d8331a95235'; //ผบป. list
+const eqtList = '603c9a325ea84524d0d2e832'; //ผคพ. list
+const cstList = '6028def313f7e56f043a2849'; //ผกส. list
+const metList = '602893c9a89e1d712af38f54'; //ผมต. list
 
-const csUser = 'U7e121ccdb2e6bde87f0ce6b734cbd7b3';
+//------------------------------------------------------------------------------------
 
-exports.webhookTrello = functions.https.onRequest(async (req, res) => {
-    const action = req.body.action;
-    if (action && action.display.translationKey !== 'unknown') {
-        const data = {
-            'action': action,
-            'changeTime': Date.now() + 25200000,
-        }
-        const board = action.data.board;
-        const card = action.data.card;
-        board.changeTime = Date.now() + 25200000;
-        await admin.firestore().collection('board').doc(action.data.board.id).set(board);
-        await admin.firestore().collection('card').doc(action.data.card.id).set(card);
-        await admin.firestore().collection('change').doc(action.id).set(data);
-        return push(action);
-    } else {
-        res.status(200).send('ok_naka');
-    }
+exports.infoLineWebhook = functions.https.onRequest(async (req, res) => {
+  const userId = req.body.events[0].source.userId;  
+  const msgType = req.body.events[0].message.type;
+  const inputText = req.body.events[0].message.text;
+  const msgRegis = '"ส่งคำขอการยืนยันตัวตนเรียบร้อย โปรดติดต่อ ผบค.กฟอ.กล เพื่อแจ้งเจ้าหน้าที่ต่อไป"';
+  const msgRegisRej = 'คุณเคยยืนยันตัวตนกับทางเจ้าหน้าที่แล้ว!';
+  const lineIdRef = db.collection('Member');
+  const snapshot =  await lineIdRef.get();
+
+  //วน loop ดึงข้อมูล Member collection มาจาก firestore
+  snapshot.forEach(doc => {
+    LineFunction(doc);
+  });
+
+  function LineFunction(doc) {
+    const fbLineID = doc.data().lineId;
+    
+    if (msgType !== 'text') 
+    {
+      return;
+    };
+    
+
+    if (inputText === 'Register')
+    {
+      if (userId !== fbLineID)
+      {
+        replyRegister(req.body, msgRegis);
+        dataSet = {
+          'userId': userId
+        };
+        db.collection('Request_member').doc(req.body.events[0].replyToken).set(dataSet);
+      } else {
+        replyRegister(req.body, msgRegisRej);
+      };
+    };
+
+    if (req.body.events[0].message.text === 'Our tasks'){
+      if (userId !== fbLineID){
+        replyRegister(req.body, 'คุณยังไม่ได้ยืนยันตัวตน โปรดติดต่อ ผบค.กฟอ.กล');
+      };
+      replyRegister(req.body, 'reply flex message to show all tasks');
+    };
+  };
 });
 
-const push = bodyResponse => {
+
+
+exports.infoTrelloWebhook = functions.https.onRequest(async (req, res) => {
+    const action = req.body.action;
+
+    if(action && action.display.translationKey !== 'unknown' && 
+    action.display.translationKey === 'action_move_card_from_list_to_list')
+    {
+        const msgReply = `มีงานชื่อ \n\n**${action.data.card.name}** \n\nถูกย้ายเข้ามายังแผนกของคุณ โปรดตรวจสอบ https://trello.com/b/NGMUS7im`;
+        if (action.data.listAfter.id === csList){
+          
+            push(csUser1,msgReply);
+            //push(csUser2,msg);
+            return res.status(200).end();
+        } else if (action.data.listAfter.id === actList){
+            //push(actUser1,msg);
+            //push(actUser2,msg);
+            return res.status(200).end();
+        } else if (action.data.listAfter.id === eqtList){
+            //push(eqtUser1,msg);
+            //push(eqtUser2,msg);
+            return res.status(200).end();
+        } else if (action.data.listAfter.id === cstList){
+            //push(cstUser1,msg);
+            //push(cstUser2,msg);
+            return res.status(200).end();
+        } else if (action.data.listAfter.id === metList){
+            //push(metUser1,msg);
+            //push(metUser2,msg);
+            return res.status(200).end();
+        }
+    }
+    return res.status(400).end();
+});
+
+const push = (res, msg) => {
     return request({
         method: `POST`,
         uri: `${LINE_MESSAGING_API}/push`,
         headers: LINE_HEADER,
         body: JSON.stringify({
-            to: csUser,
-            messages: [
-                {
-                    type: `text`,
-                    text: JSON.stringify(bodyResponse)
-                }
-            ]
-        })
+        to: res,
+        messages: [
+          {
+            type: `text`,
+            text: msg
+          }
+        ]
+      })
     }).then(() => {
-        return res.status(200).send(`Done`);
+      return res.status(200).send(`Done`);
     }).catch((error) => {
-        return Promise.reject(error);
+      return Promise.reject(error);
     });
 }
+
+const replyRegister = (bodyResponse, msg) => {
+    return request({
+      method: `POST`,
+      uri: `${LINE_MESSAGING_API}/reply`,
+      headers: LINE_HEADER,
+      body: JSON.stringify({
+        replyToken: bodyResponse.events[0].replyToken,
+        messages: [
+          {
+            type: `text`,
+            text: msg
+          }
+        ]
+      })
+    });
+  };
